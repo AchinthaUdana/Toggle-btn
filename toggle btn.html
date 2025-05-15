@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Mode Toggle</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --primary-color: #4361ee;
+            --toggle-bg: #f0f0f0;
+            --toggle-border: #ddd;
+            --sun-color: #FFD700;
+            --moon-color: #6b7280;
+            --transition-speed: 0.4s;
+            --glow-effect: 0 0 10px rgba(255, 215, 0, 0.7);
+        }
+        
+        body.dark-mode {
+            --bg-color: #1a1a2e;
+            --text-color: #f8f9fa;
+            --toggle-bg: #2d2d44;
+            --toggle-border: #3d3d5a;
+            --sun-color: #6b7280;
+            --moon-color: #e0e0e0;
+            --glow-effect: 0 0 10px rgba(224, 224, 224, 0.7);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+        
+        .mode-toggle-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .toggle-wrapper {
+            position: relative;
+            width: 200px;
+            height: 80px;
+            perspective: 800px;
+        }
+        
+        .toggle-btn {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform var(--transition-speed);
+            cursor: pointer;
+        }
+        
+        .toggle-front, .toggle-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-radius: 40px;
+            background: var(--toggle-bg);
+            border: 2px solid var(--toggle-border);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .toggle-back {
+            transform: rotateY(180deg);
+            background: var(--toggle-bg);
+        }
+        
+        .toggle-icon {
+            font-size: 1.8rem;
+            transition: all var(--transition-speed);
+        }
+        
+        .sun {
+            color: var(--sun-color);
+        }
+        
+        .moon {
+            color: var(--moon-color);
+        }
+        
+        .toggle-label {
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .toggle-btn.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        /* Glow effect for active icon */
+        .toggle-btn:not(.flipped) .sun {
+            filter: drop-shadow(var(--glow-effect));
+            transform: scale(1.1);
+        }
+        
+        .toggle-btn.flipped .moon {
+            filter: drop-shadow(var(--glow-effect));
+            transform: scale(1.1) rotate(20deg);
+        }
+        
+        /* Particle effects */
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            border-radius: 40px;
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: currentColor;
+            border-radius: 50%;
+            opacity: 0;
+        }
+        
+        /* Animation for particles */
+        @keyframes particle-pop {
+            0% {
+                transform: translate(0, 0) scale(0);
+                opacity: 0.6;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(1);
+                opacity: 0;
+            }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .toggle-wrapper {
+                width: 160px;
+                height: 70px;
+            }
+            
+            .toggle-icon {
+                font-size: 1.5rem;
+            }
+            
+            .toggle-label {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="light-mode">
+    <div class="mode-toggle-container">
+        <h1>Theme Switcher</h1>
+        <div class="toggle-wrapper">
+            <div class="toggle-btn" id="toggleBtn">
+                <div class="toggle-front">
+                    <i class="fas fa-sun toggle-icon sun"></i>
+                    <span class="toggle-label">Light</span>
+                    <i class="fas fa-moon toggle-icon moon"></i>
+                </div>
+                <div class="toggle-back">
+                    <i class="fas fa-sun toggle-icon sun"></i>
+                    <span class="toggle-label">Dark</span>
+                    <i class="fas fa-moon toggle-icon moon"></i>
+                </div>
+                <div class="particles" id="particles"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const toggleBtn = document.getElementById('toggleBtn');
+        const body = document.body;
+        const particlesContainer = document.getElementById('particles');
+        
+        // Check for saved user preference or use system preference
+        const savedMode = localStorage.getItem('mode');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedMode === 'dark' || (!savedMode && systemPrefersDark)) {
+            body.classList.add('dark-mode');
+            toggleBtn.classList.add('flipped');
+        }
+        
+        toggleBtn.addEventListener('click', function() {
+            // Toggle dark mode class
+            body.classList.toggle('dark-mode');
+            toggleBtn.classList.toggle('flipped');
+            
+            // Save user preference
+            const isDarkMode = body.classList.contains('dark-mode');
+            localStorage.setItem('mode', isDarkMode ? 'dark' : 'light');
+            
+            // Create particles
+            createParticles(isDarkMode ? '#e0e0e0' : '#FFD700');
+        });
+        
+        function createParticles(color) {
+            particlesContainer.innerHTML = '';
+            const particleCount = 15;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                particle.style.width = `${Math.random() * 8 + 4}px`;
+                particle.style.height = particle.style.width;
+                particle.style.color = color;
+                
+                // Random position around the center
+                const centerX = 100;
+                const centerY = 40;
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 30 + 20;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                
+                particle.style.left = `${centerX}px`;
+                particle.style.top = `${centerY}px`;
+                particle.style.setProperty('--tx', `${tx}px`);
+                particle.style.setProperty('--ty', `${ty}px`);
+                
+                particle.style.animation = `particle-pop ${Math.random() * 0.4 + 0.6}s ease-out forwards`;
+                
+                particlesContainer.appendChild(particle);
+                
+                // Remove particle after animation
+                setTimeout(() => {
+                    particle.remove();
+                }, 1000);
+            }
+        }
+    </script>
+</body>
+</html>
